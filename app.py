@@ -1,10 +1,9 @@
 # from flask import Flask, render_template, request
 # import requests
-# from googletrans import Translator
 
 # app = Flask(__name__)
 
-# DG_API_KEY = "0ff78babd6969e0facb7da35bb608e77b046726d"   # 🔹 Add your Deepgram API key here
+# DG_API_KEY = "0ff78babd6969e0facb7da35bb608e77b046726d"   # Add your Deepgram API key here
 
 
 # def transcribe_audio(file_path):
@@ -15,10 +14,32 @@
 #         audio_data = f.read()
 
 #     response = requests.post(url, headers=headers, data=audio_data)
-
 #     result = response.json()
-#     text = result["results"]["channels"][0]["alternatives"][0]["transcript"]
-#     return text
+
+#     print(result)  # Debug if needed
+
+#     return result["results"]["channels"][0]["alternatives"][0]["transcript"]
+
+
+# def translate_to_hindi(text):
+#     url = "https://api.mymemory.translated.net/get"
+#     translated_full = ""
+    
+#     # Break text into chunks of 400 characters
+#     chunks = [text[i:i+400] for i in range(0, len(text), 400)]
+    
+#     for chunk in chunks:
+#         params = {
+#             "q": chunk,
+#             "langpair": "en|hi"
+#         }
+        
+#         response = requests.get(url, params=params)
+#         data = response.json()
+        
+#         translated_full += data["responseData"]["translatedText"] + " "
+    
+#     return translated_full.strip()
 
 
 # @app.route("/", methods=["GET", "POST"])
@@ -32,12 +53,8 @@
 #             filepath = "uploaded_audio.mp3"
 #             file.save(filepath)
 
-#             # English transcription
 #             english_text = transcribe_audio(filepath)
-
-#             # Hindi translation
-#             translator = Translator()
-#             hindi_text = translator.translate(english_text, dest="hi").text
+#             hindi_text = translate_to_hindi(english_text)
 
 #     return render_template("index.html",
 #                            english_text=english_text,
@@ -45,7 +62,9 @@
 
 
 # if __name__ == "__main__":
-#     app.run(debug=True)
+#     import os
+#     port = int(os.environ.get("PORT", 5000))
+#     app.run(host="0.0.0.0", port=port)
 
 
 from flask import Flask, render_template, request
@@ -71,25 +90,25 @@ def transcribe_audio(file_path):
     return result["results"]["channels"][0]["alternatives"][0]["transcript"]
 
 
+# ✅ NEW — unlimited translation (Google unofficial)
 def translate_to_hindi(text):
-    url = "https://api.mymemory.translated.net/get"
-    translated_full = ""
-    
-    # Break text into chunks of 400 characters
-    chunks = [text[i:i+400] for i in range(0, len(text), 400)]
-    
-    for chunk in chunks:
-        params = {
-            "q": chunk,
-            "langpair": "en|hi"
-        }
-        
-        response = requests.get(url, params=params)
-        data = response.json()
-        
-        translated_full += data["responseData"]["translatedText"] + " "
-    
-    return translated_full.strip()
+    url = "https://translate.googleapis.com/translate_a/single"
+    params = {
+        "client": "gtx",
+        "sl": "en",
+        "tl": "hi",
+        "dt": "t",
+        "q": text
+    }
+
+    response = requests.get(url, params=params)
+
+    try:
+        result = response.json()
+        translated = "".join([i[0] for i in result[0]])
+        return translated
+    except:
+        return "Translation error"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -115,5 +134,6 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
